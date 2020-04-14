@@ -16,11 +16,12 @@ var maxID uint
 //生产者函数
 func (ts *TsCrawler) GetAllEdu() {
 
-	chrome := NewChromedp(ts.Ctx)
+	ctx := context.Background()
+	chrome := NewChromedp(ctx)
+	ts.CurrentFlow("GetAllEdu",ctx)
 	defer chrome.Close()
 
 	db := Basics.GetDB()
-	db.Find(&everyType)
 
 	//便利出所有的类型
 	for id, ets := range everyType {
@@ -80,17 +81,6 @@ func selectUrl(html string, reg string, tst Basics.TsUrl, db *gorm.DB,count *int
 	}
 }
 
-//将该类型下的所有教育机构的Url放入切片中
-func eduUrl(url *string, i int) chromedp.Tasks {
-	return chromedp.Tasks{
-		chromedp.JavascriptAttribute(
-			`.office-result-list li:nth-child(`+strconv.Itoa(i)+`) .office-rlist-r a`,
-			"href",
-			url,
-		),
-	}
-}
-
 //最大页码查询
 func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa, mul int) {
 	ctx, c := chrome.NewTab()
@@ -125,34 +115,3 @@ func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa, mul int) {
 	return
 }
 
-
-
-
-
-
-
-
-//////-------------------Code to be abandoned---------------////////
-//第一页加载
-func FirstPage(ctx context.Context, ets TsCrawler) (AllUrl []string) {
-	for j := 1; j <= 15; j++ {
-		err := chromedp.Run(ctx, eduUrl(&ets.Url, j+1))
-		if err != nil {
-			fmt.Println("第一页加载报错：", err)
-			break
-		}
-		//验证学校url
-		log.Println(ets.Url, "放入通道,当前页", 1)
-		//将各个学校的URL放入通道
-		//fmt.Println(ets)
-	}
-	err := chromedp.Run(ctx,
-		//翻页
-		chromedp.Navigate(ets.TypeUrl+"p"+strconv.Itoa(2)+".html"),
-	)
-	if err != nil {
-		log.Println("第一页翻页报错：", err)
-		return
-	}
-	return
-}

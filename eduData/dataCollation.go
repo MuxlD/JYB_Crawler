@@ -10,38 +10,40 @@ import (
 var (
 	chromedpTimeout int //爬取网络超时时间
 	done            chan struct{}
-	tsCh            chan TsCrawler
+	tsCh            chan Basics.TsUrl
 	tsCapacity      = 1000 //仓库容量
 )
 
-
-//用于类型及学校url信息的爬取
+//用于记录当前程序流信息
 type TsCrawler struct {
-	Type    string
-	TypeId  int
-	TypeUrl string
-	Url     string
-	Ctx     context.Context
+	FlowTo     string
+	CurrentCtx context.Context
 }
 
-func NewTsCrawler(ctx context.Context) *TsCrawler {
+func InitTsCrawler() *TsCrawler {
 	return &TsCrawler{
-		Ctx: ctx,
+		"begin",
+		nil,
 	}
 }
 
-//ctx 为 parent context (context.Background)
-func StartContext(firstCtx context.Context, goroutineNum, cralerTimeout int) {
+func (ts *TsCrawler) CurrentFlow(flowname string, ctx context.Context) *TsCrawler {
+	ts.FlowTo = ts.FlowTo + "->" + flowname
+	ts.CurrentCtx = ctx
+	return ts
+}
 
+func (ts *TsCrawler) StartContext(goroutineNum, cralerTimeout int) {
+
+	//构建类型切片，设置通用超时时间
 	everyType = make([]Basics.Type, 20)
 	chromedpTimeout = cralerTimeout
 
 	//建立用于类型爬取的context
-	chrome := NewChromedp(firstCtx)
+	chrome := NewChromedp(context.Background())
 	ctx, _ := chrome.NewTab()
 	//获取所有类型链接,为变量everyType赋值
-	typeCrawler := NewTsCrawler(ctx)
-	err := typeCrawler.FindAllType(Basics.JYBFL)
+	err := ts.CurrentFlow("FindAllType", ctx).FindAllType(Basics.JYBFL)
 	//类型爬取结束取消该ctx
 	chrome.Close()
 	if err != nil {
@@ -49,14 +51,13 @@ func StartContext(firstCtx context.Context, goroutineNum, cralerTimeout int) {
 		return
 	}
 
-	tsCrawler := NewTsCrawler(firstCtx)
-	tsCrawler.Do(goroutineNum)
+	ts.Do(goroutineNum)
 }
 
 func (ts *TsCrawler) Do(chromeNum int) {
 
 	//设置仓库容量
-	tsCh = make(chan TsCrawler, tsCapacity)
+	tsCh = make(chan Basics.TsUrl, tsCapacity)
 	//生产者信号通道
 	done = make(chan struct{})
 
@@ -65,11 +66,10 @@ func (ts *TsCrawler) Do(chromeNum int) {
 	fmt.Println(len(tsCh))
 	//多消费者
 	//for i := 0; i < chromeNum; i++ {
-		 //go ts.Crawler(strconv.Itoa(0))
-		//time.Sleep(time.Second * 10)
+	//go ts.Crawler(strconv.Itoa(0))
+	//time.Sleep(time.Second * 10)
 	//}
 }
-
 
 //主要爬虫程序
 func (ts *TsCrawler) Crawler(chromeId string) {
@@ -77,7 +77,7 @@ func (ts *TsCrawler) Crawler(chromeId string) {
 	chrome := NewChromedp(ts.Ctx)
 	var stop bool
 	var ok bool
-	var tsCraw TsCrawler
+	var tsCraw Basics.TsUrl
 	for {
 		select {
 		case <-ts.Ctx.Done():
