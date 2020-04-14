@@ -64,7 +64,7 @@ const (
     "number_of_replicas": 0
   },
   "mappings": {
-    "type_infos": {
+    "type_info": {
       "properties": {
         "type_id": {
           "type": "integer"
@@ -87,13 +87,13 @@ const (
 }`
 )
 
-func Mapping(index, mapping string){
+func Mapping(index, mapping string) {
 	ctx := context.Background()
 	//验证索引index是否存在
 	//如果index存在，则将其删除
 	exists, err := Client.IndexExists(index).Do(ctx)
 	if err != nil {
-		log.Fatal(index,"IndexExists error:",err)
+		log.Fatal(index, "IndexExists error:", err)
 	}
 	if exists {
 		_, err := Client.DeleteIndex(index).Do(ctx)
@@ -104,6 +104,6 @@ func Mapping(index, mapping string){
 	//按照mapping新建索引
 	_, err = Client.CreateIndex(index).Body(mapping).Do(ctx)
 	if err != nil {
-		log.Fatal(index,"CreateIndex error:",err)
+		log.Fatal(index, "CreateIndex error:", err)
 	}
 }

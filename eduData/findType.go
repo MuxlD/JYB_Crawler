@@ -15,12 +15,16 @@ func (ts *TsCrawler) FindAllType(url string) (err error) {
 	db := Basics.GetDB()
 
 	db.Model(Basics.Type{}).Find(&Basics.EveryType)
-	if Basics.EveryType[0].TypeName != "" && Basics.EveryType[19].TypeName != "" {
+	if len(Basics.EveryType) < 20 {
+		//清除表格数据
+		db.Exec("TRUNCATE TABLE types;")
+		//清空切片
+		Basics.EveryType = nil
+		Basics.EveryType = make([]Basics.Type, 20)
+	} else if Basics.EveryType[0].TypeName != "" && Basics.EveryType[19].TypeName != "" {
 		log.Println("everyType form database...")
 		return nil
 	}
-	//清除表格数据
-	db.Exec("TRUNCATE TABLE types;")
 
 	start := time.Now()
 	//建立用于类型爬取的context
@@ -43,7 +47,7 @@ func (ts *TsCrawler) FindAllType(url string) (err error) {
 	}
 
 	for i := 0; i < 20; i++ {
-		Basics.EveryType[i].ID = uint(i)
+		Basics.EveryType[i].ID = uint(i + 1)
 		err = chromedp.Run(ctx, eduType(i))
 		if err != nil {
 			fmt.Println(err)
@@ -65,7 +69,7 @@ func eduType(i int) chromedp.Tasks {
 }
 
 //返回抓取类型链接的sel
-func TypeSel(i int, ) (sel string) {
+func TypeSel(i int) (sel string) {
 	if i <= 10 {
 		sel = `.class-groups .class-groups-left div:nth-child(` + strconv.Itoa(i) + `) a`
 	} else {

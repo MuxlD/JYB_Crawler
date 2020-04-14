@@ -52,15 +52,13 @@ func BulkInsert() error {
 	return nil
 }
 
-
 //插入类型表到es
 func TpBulkInsert() error {
 
 	bulk := Client.Bulk().Index("crawler_type").Type("type_info")
 
 	for _, d := range Basics.EveryType {
-		// AddUint64(): total增加1，并返回一个新的值 类似于total++
-		atomic.AddUint64(&Total, 1)
+
 		// Enqueue the document
 		bulk.Add(elastic.NewBulkIndexRequest().Id(strconv.Itoa(int(d.ID))).Doc(d))
 

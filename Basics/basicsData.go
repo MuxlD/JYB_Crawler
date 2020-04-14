@@ -55,7 +55,7 @@ type TrainingSchool struct {
 
 type Type struct {
 	gorm.Model
-	TypeName string `json:"name"`
+	TypeName string `json:"type_name"`
 	TypeUrl  string `json:"type_url"`
 	MaxPage  int    `json:"max_page"`
 	Count    int    `json:"count"`

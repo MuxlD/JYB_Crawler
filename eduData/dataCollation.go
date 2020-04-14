@@ -25,7 +25,6 @@ func (ts *TsCrawler) NewTsCrawler(ctx context.Context) *TsCrawler {
 func StartContext(goroutineNum, cralerTimeout int) {
 	ts := new(TsCrawler)
 	//构建类型切片，设置通用超时时间
-	Basics.EveryType = make([]Basics.Type, 20)
 	chromedpTimeout = cralerTimeout
 
 	//获取所有类型链接,为变量everyType赋值
