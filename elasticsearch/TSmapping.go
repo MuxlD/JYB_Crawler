@@ -1,32 +1,31 @@
-package Own
+package elasticsearch
 
 import (
-	"chromedp_test/elasticsearch"
 	"context"
 	"log"
 )
 
 const (
-	mapping = `{
+	TsMapping = `{
   "mappings": {
     "training_school": {
       "properties": {
         "id": {
+          "type": "long"
+        },
+        "url": {
           "type": "keyword"
         },
-        "type_name": {
-          "type": "keyword"
-        },
-        "type_url": {
+        "name": {
           "type": "keyword"
         },
         "type_id": {
           "type": "integer"
         },
-        "name": {
+        "type_url": {
           "type": "keyword"
         },
-        "url": {
+        "type_name": {
           "type": "keyword"
         },
         "bright_spot": {
@@ -58,25 +57,53 @@ const (
     "number_of_replicas": 0
   }
 }`
+
+	TpMapping = `{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "type_infos": {
+      "properties": {
+        "type_id": {
+          "type": "integer"
+        },
+        "type_url": {
+          "type": "keyword"
+        },
+        "type_name": {
+          "type": "keyword"
+        },
+        "max_page": {
+          "type": "integer"
+        },
+        "count": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}`
 )
 
-func Mapping(index string) {
+func Mapping(index, mapping string){
 	ctx := context.Background()
 	//验证索引index是否存在
 	//如果index存在，则将其删除
-	exists, err := elasticsearch.Client.IndexExists(index).Do(ctx)
+	exists, err := Client.IndexExists(index).Do(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(index,"IndexExists error:",err)
 	}
 	if exists {
-		_, err := elasticsearch.Client.DeleteIndex(index).Do(ctx)
+		_, err := Client.DeleteIndex(index).Do(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 	//按照mapping新建索引
-	_, err = elasticsearch.Client.CreateIndex(index).Body(mapping).Do(ctx)
+	_, err = Client.CreateIndex(index).Body(mapping).Do(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(index,"CreateIndex error:",err)
 	}
 }

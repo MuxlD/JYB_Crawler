@@ -1,7 +1,7 @@
 package eduData
 
 import (
-	"chromedp_test/Basics"
+	"JYB_Crawler/Basics"
 	"context"
 	"fmt"
 	"github.com/chromedp/chromedp"
@@ -15,16 +15,14 @@ var maxID uint
 
 //生产者函数
 func (ts *TsCrawler) GetAllEdu() {
+	db := Basics.GetDB()
+	db.Exec("TRUNCATE TABLE types;")
 
 	ctx := context.Background()
 	chrome := NewChromedp(ctx)
-	ts.CurrentFlow("GetAllEdu",ctx)
-	defer chrome.Close()
-
-	db := Basics.GetDB()
 
 	//便利出所有的类型
-	for id, ets := range everyType {
+	for id, ets := range Basics.EveryType {
 		var count int
 		_ = db.Table("ts_urls").Select("max(id)").Row().Scan(&maxID)
 		start := time.Now()
@@ -55,7 +53,7 @@ func (ts *TsCrawler) GetAllEdu() {
 				break
 			}
 			fmt.Println("当前链接：", nowPageUrl)
-			selectUrl(urlHtml, `href="(.*)" target="_blank" class="office-rlist-name"`, oneUrl, db ,&count)
+			selectUrl(urlHtml, `href="(.*)" target="_blank" class="office-rlist-name"`, oneUrl, db, &count)
 		}
 		db.Model(&Basics.Type{}).Where("id = ?", id+1).Update("count", count)
 		log.Printf("抓取成功:%v，爬取耗时：%v\n", ets.TypeUrl, time.Since(start))
@@ -68,7 +66,7 @@ func (ts *TsCrawler) GetAllEdu() {
 }
 
 //提取url
-func selectUrl(html string, reg string, tst Basics.TsUrl, db *gorm.DB,count *int) {
+func selectUrl(html string, reg string, tst Basics.TsUrl, db *gorm.DB, count *int) {
 
 	result := SelfReg(html, reg)
 	for i := range result {
@@ -114,4 +112,3 @@ func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa, mul int) {
 	mul = (maxPa + 3) / 3
 	return
 }
-

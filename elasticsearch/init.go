@@ -1,12 +1,10 @@
 package elasticsearch
 
 import (
-	"chromedp_test/Basics"
-	"chromedp_test/elasticsearch/Own"
+	"JYB_Crawler/Basics"
 	"context"
 	"flag"
 	"github.com/olivere/elastic/v7"
-	"golang.org/x/sync/errgroup"
 	"log"
 )
 
@@ -23,7 +21,6 @@ var (
 	err      error
 	Docsc    chan Basics.TrainingSchool
 	Total    uint64
-	G        *errgroup.Group
 	IndexCtx context.Context
 )
 
@@ -60,8 +57,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	G, IndexCtx = errgroup.WithContext(context.TODO())
-
 	//创建索引结构
-	Own.Mapping(Index)
+	Mapping(Index, TsMapping)
+	Mapping("crawler_type", TpMapping)
 }

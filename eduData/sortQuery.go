@@ -1,7 +1,7 @@
 package eduData
 
 import (
-	"chromedp_test/Basics"
+	"JYB_Crawler/Basics"
 	"context"
 	"fmt"
 	"github.com/chromedp/chromedp"
@@ -17,17 +17,14 @@ func CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
 	var bts Basics.TrainingSchool
 	log.Println("当前学校链接：", tsCraw.Url)
 
-	//数据库准备
-	db := Basics.GetDB()
 	//进入具体的信息爬取
 	var err error
 	bts, err = EveryEdu(goCtx, tsCraw.Url)
 	if err != nil {
 		log.Println("信息爬取失败，失败信息：", tsCraw.Url, err)
 	}
-	bts.TypeId = tsCraw.TypeID
+	//bts.TypeId = tsCraw.TypeID
 	bts.Url = tsCraw.Url
-	db.Create(&bts)
 	fmt.Println(bts)
 
 }

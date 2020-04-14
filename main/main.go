@@ -2,14 +2,17 @@
 package main
 
 import (
-	"chromedp_test/Basics"
-	"chromedp_test/eduData"
+	"JYB_Crawler/Basics"
+	"JYB_Crawler/eduData"
+
+	//_ "JYB_Crawler/elasticsearch"
+
 )
 
 func main() {
 
 	Basics.StartMySql()
 	//开始爬虫工作
-	eduData.InitTsCrawler().StartContext(5,15)
+	eduData.StartContext(5,15)
 }
 

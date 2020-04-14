@@ -1,7 +1,7 @@
 package eduData
 
 import (
-	"chromedp_test/Basics"
+	"JYB_Crawler/Basics"
 	"context"
 	"fmt"
 	"github.com/chromedp/chromedp"
@@ -10,14 +10,12 @@ import (
 	"time"
 )
 
-var everyType []Basics.Type
-
 func (ts *TsCrawler) FindAllType(url string) (err error) {
 
 	db := Basics.GetDB()
 
-	db.Model(Basics.Type{}).Find(&everyType)
-	if everyType[0].Name[:12]== "英语培训" && everyType[19].Name[:12]=="其他培训"{
+	db.Model(Basics.Type{}).Find(&Basics.EveryType)
+	if Basics.EveryType[0].TypeName != "" && Basics.EveryType[19].TypeName != "" {
 		log.Println("everyType form database...")
 		return nil
 	}
@@ -25,8 +23,12 @@ func (ts *TsCrawler) FindAllType(url string) (err error) {
 	db.Exec("TRUNCATE TABLE types;")
 
 	start := time.Now()
-	//`ts.CurrentCtx` from `ctx, _ := chrome.NewTab()`
-	ctx, cancel := context.WithTimeout(ts.CurrentCtx, time.Duration(chromedpTimeout)*time.Second)
+	//建立用于类型爬取的context
+	chrome := NewChromedp(context.Background())
+	defer chrome.Close()
+	ctx0, cancel0 := chrome.NewTab()
+	defer cancel0()
+	ctx, cancel := context.WithTimeout(ctx0, time.Duration(chromedpTimeout)*time.Second)
 	defer cancel()
 
 	err = chromedp.Run(ctx,
@@ -41,13 +43,13 @@ func (ts *TsCrawler) FindAllType(url string) (err error) {
 	}
 
 	for i := 0; i < 20; i++ {
-		everyType[i].ID = uint(i)
+		Basics.EveryType[i].ID = uint(i)
 		err = chromedp.Run(ctx, eduType(i))
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		db.Create(&everyType[i])
+		db.Create(&Basics.EveryType[i])
 	}
 	//fmt.Println(everyTypeInfo)
 	log.Printf("类型抓取成功,链接：%v，爬取耗时：%v\n", url, time.Since(start))
@@ -57,8 +59,8 @@ func (ts *TsCrawler) FindAllType(url string) (err error) {
 //将抓取到的类型链接放入切片,并跳转到该类型下
 func eduType(i int) chromedp.Tasks {
 	return chromedp.Tasks{
-		chromedp.JavascriptAttribute(TypeSel(i+1), "href", &everyType[i].TypeUrl),
-		chromedp.Text(TypeSel(i+1), &everyType[i].Name),
+		chromedp.JavascriptAttribute(TypeSel(i+1), "href", &Basics.EveryType[i].TypeUrl),
+		chromedp.Text(TypeSel(i+1), &Basics.EveryType[i].TypeName),
 	}
 }
 
