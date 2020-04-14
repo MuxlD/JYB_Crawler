@@ -27,18 +27,6 @@ type MySql struct {
 	Database string
 }
 
-func StartMySql() {
-	InitConf()
-	MysqlInit(
-		ConfSql.Name,
-		ConfSql.Password,
-		ConfSql.Host,
-		ConfSql.Port,
-		ConfSql.Database,
-	)
-	CreateTable()
-}
-
 type TrainingSchool struct {
 	ID          int      `json:"id"`
 	Url         string   `json:"url"`
@@ -60,6 +48,7 @@ type Type struct {
 	MaxPage  int    `json:"max_page"`
 	Count    int    `json:"count"`
 }
+var EveryType []Type
 
 type TsUrl struct {
 	gorm.Model
@@ -68,4 +57,4 @@ type TsUrl struct {
 	Url    string `json:"url"`
 }
 
-var EveryType []Type
+

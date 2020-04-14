@@ -16,7 +16,7 @@ var maxID uint
 //生产者函数
 func (ts *TsCrawler) GetAllEdu() {
 	db := Basics.GetDB()
-	db.Exec("TRUNCATE TABLE types;")
+	db.Exec("TRUNCATE TABLE ts_urls;")
 
 	ctx := context.Background()
 	chrome := NewChromedp(ctx)

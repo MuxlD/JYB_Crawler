@@ -6,6 +6,12 @@ import (
 )
 
 func main() {
-	a,_:= strconv.Atoi("13232")
-	fmt.Println(strconv.Itoa(3222434),a)
+	testStr := make([]string, 20)
+	fmt.Println(testStr[11])
+	for i:= range testStr {
+		testStr[i] = strconv.Itoa(i)
+	}
+	fmt.Println(testStr)
+	testStr=nil
+	fmt.Println(testStr)
 }

@@ -58,6 +58,6 @@ func init() {
 	}
 
 	//创建索引结构
-	Mapping(Index, TsMapping)
+	//Mapping(Index, TsMapping)
 	Mapping("crawler_type", TpMapping)
 }

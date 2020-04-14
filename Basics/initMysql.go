@@ -36,3 +36,15 @@ func CreateTable(){
 		TsUrl{},
 	)
 }
+
+func StartMySql() {
+	InitConf()
+	MysqlInit(
+		ConfSql.Name,
+		ConfSql.Password,
+		ConfSql.Host,
+		ConfSql.Port,
+		ConfSql.Database,
+	)
+	CreateTable()
+}
