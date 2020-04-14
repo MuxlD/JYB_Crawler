@@ -1,4 +1,4 @@
-package eduDate
+package eduData
 
 import (
 	"chromedp_test/Basics"

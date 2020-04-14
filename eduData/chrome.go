@@ -1,4 +1,4 @@
-package eduDate
+package eduData
 
 import (
 	"context"

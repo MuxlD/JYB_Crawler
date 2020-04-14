@@ -2,16 +2,16 @@
 package main
 
 import (
-	"chromedp_test/eduDate"
+	"chromedp_test/Basics"
+	"chromedp_test/eduData"
 	"context"
 	"log"
 )
 
 func main() {
-	//连接数据库
-	//Basics.StartMySql()
 
-	//context.Background()为空context，不可取消
+	Basics.StartMySql()
+
 	parentCtx:=context.Background()
 	log.Println("parentCtx:",parentCtx)
 
@@ -21,6 +21,6 @@ func main() {
 	log.Println("The first cancelable context:",ctx)
 
 	//开始爬虫工作
-	eduDate.StartContext(ctx,5,15)
+	eduData.StartContext(ctx,5,15)
 }
 

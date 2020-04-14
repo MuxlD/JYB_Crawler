@@ -1,4 +1,4 @@
-package eduDate
+package eduData
 
 import (
 	"chromedp_test/Basics"
@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	BrowserMap      map[string]*ChromeBrowser
 	chromedpTimeout int //爬取网络超时时间
 	done            chan struct{}
 	tsCh            chan TsCrawler
@@ -34,25 +33,22 @@ func NewTsCrawler(ctx context.Context) *TsCrawler {
 //ctx 为 parent context (context.Background)
 func StartContext(firstCtx context.Context, goroutineNum, cralerTimeout int) {
 
-	BrowserMap = make(map[string]*ChromeBrowser, goroutineNum+2)
-	everyType = make([]TsCrawler, 20)
+	everyType = make([]Basics.Type, 20)
 	chromedpTimeout = cralerTimeout
 
 	//建立用于类型爬取的context
-	ctx, cancel := NewChromeCtx(firstCtx, "-2")
-	log.Println("typeCrawler used ", ctx) //InitChromedp's context.
+	chrome := NewChromedp(firstCtx)
+	ctx, _ := chrome.NewTab()
 	//获取所有类型链接,为变量everyType赋值
 	typeCrawler := NewTsCrawler(ctx)
 	err := typeCrawler.FindAllType(Basics.JYBFL)
 	//类型爬取结束取消该ctx
-	cancel()
-	log.Println(ctx, " cancelled...")
+	chrome.Close()
 	if err != nil {
 		log.Println("FindAllType error, info：", err)
 		return
 	}
 
-	log.Println("TsCrawler's parent context is", firstCtx) //context.Background.WithCancel
 	tsCrawler := NewTsCrawler(firstCtx)
 	tsCrawler.Do(goroutineNum)
 }
