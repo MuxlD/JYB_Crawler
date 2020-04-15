@@ -2,7 +2,6 @@ package elasticsearch
 
 import (
 	"JYB_Crawler/Basics"
-	"context"
 	"flag"
 	"github.com/olivere/elastic/v7"
 	"log"
@@ -17,11 +16,10 @@ var (
 )
 
 var (
-	Client   *elastic.Client
-	err      error
-	Docsc    chan Basics.TrainingSchool
-	Total    uint64
-	IndexCtx context.Context
+	Client *elastic.Client
+	err    error
+	Docsc  chan Basics.TrainingSchool
+	Total  uint64
 )
 
 func InitMapping() {

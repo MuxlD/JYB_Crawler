@@ -5,14 +5,12 @@ import (
 	"context"
 	"errors"
 	"github.com/olivere/elastic/v7"
-	"log"
 	"strconv"
 	"sync/atomic"
-	"time"
 )
 
-func BulkInsert() {
-	defer close(Docsc)
+//Consumer
+func BulkInsert(indexCtx context.Context) error {
 	bulk := Client.Bulk().Index(Index).Type(Typ)
 	for d := range Docsc {
 		// Simple progress
@@ -24,33 +22,31 @@ func BulkInsert() {
 		//当bulk中的doc的数量达到bulkSize时，执行一次批量插入操作
 		if bulk.NumberOfActions() >= BulkSize {
 			// Commit
-			res, err := bulk.Do(IndexCtx)
+			res, err := bulk.Do(indexCtx)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 			if res.Errors {
 				// Look up the failed documents with res.Failed(), and e.g. recommit
-				log.Fatalln(errors.New("bulk commit failed"))
-
+				return errors.New("bulk commit failed")
 			}
 			// "bulk" is reset after Do, so you can reuse it
 		}
 
 		select {
 		default:
-		case <-IndexCtx.Done():
-			log.Fatalln(IndexCtx.Err())
+		case <-indexCtx.Done():
+			return indexCtx.Err()
 		}
-		//写入一次程序暂停3s
-		time.Sleep(3e9)
 	}
 	// Commit the final batch before exiting
 	if bulk.NumberOfActions() > 0 {
-		_, err := bulk.Do(IndexCtx)
+		_, err = bulk.Do(indexCtx)
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
 	}
+	return nil
 }
 
 //插入类型表到es

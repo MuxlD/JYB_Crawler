@@ -10,7 +10,7 @@ import (
 	"regexp"
 )
 
-func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
+func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
 
 	goCtx, cancel := chr.NewTab()
 	defer cancel()
@@ -19,7 +19,6 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
 	//进入具体的信息爬取
-	var err error
 	bts, err = ts.EveryEdu(goCtx, tsCraw.Url)
 	if err != nil {
 		log.Println("信息爬取失败，失败信息：", tsCraw.Url, err)
@@ -35,6 +34,7 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
 
 	elasticsearch.Docsc <- bts
 
+	return
 }
 
 func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err error) {

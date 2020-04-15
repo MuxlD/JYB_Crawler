@@ -66,7 +66,7 @@ func (ts *TsCrawler) GetAllEdu() {
 	}
 
 	//关闭通道，通知所有类目下的商品获取完成
-	//close(done)
+	close(done)
 	log.Println("所有学校url提取完成...")
 	//将完善过的type对象批量插入es
 	err := elasticsearch.TpBulkInsert()
