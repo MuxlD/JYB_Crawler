@@ -24,7 +24,7 @@ var (
 	IndexCtx context.Context
 )
 
-func init() {
+func InitMapping() {
 	flag.StringVar(&url, "url", "http://localhost:9200", "Elasticsearch URL")
 	flag.StringVar(&Index, "index", "crawler_training_school", "Elasticsearch index name")
 	flag.StringVar(&Typ, "type", "training_school", "Elasticsearch type name")

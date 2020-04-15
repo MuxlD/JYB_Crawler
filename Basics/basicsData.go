@@ -48,13 +48,11 @@ type Type struct {
 	MaxPage  int    `json:"max_page"`
 	Count    int    `json:"count"`
 }
+
 var EveryType []Type
 
 type TsUrl struct {
 	gorm.Model
 	TypeID uint   `json:"type_id"`
-	Name   string `json:"name"`
 	Url    string `json:"url"`
 }
-
-

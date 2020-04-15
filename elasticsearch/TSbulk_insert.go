@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"github.com/olivere/elastic/v7"
+	"log"
 	"strconv"
 	"sync/atomic"
 	"time"
 )
 
-func BulkInsert() error {
+func BulkInsert() {
 	defer close(Docsc)
 	bulk := Client.Bulk().Index(Index).Type(Typ)
 	for d := range Docsc {
@@ -25,11 +26,12 @@ func BulkInsert() error {
 			// Commit
 			res, err := bulk.Do(IndexCtx)
 			if err != nil {
-				return err
+				log.Fatalln(err)
 			}
 			if res.Errors {
 				// Look up the failed documents with res.Failed(), and e.g. recommit
-				return errors.New("bulk commit failed")
+				log.Fatalln(errors.New("bulk commit failed"))
+
 			}
 			// "bulk" is reset after Do, so you can reuse it
 		}
@@ -37,7 +39,7 @@ func BulkInsert() error {
 		select {
 		default:
 		case <-IndexCtx.Done():
-			return IndexCtx.Err()
+			log.Fatalln(IndexCtx.Err())
 		}
 		//写入一次程序暂停3s
 		time.Sleep(3e9)
@@ -46,10 +48,9 @@ func BulkInsert() error {
 	if bulk.NumberOfActions() > 0 {
 		_, err := bulk.Do(IndexCtx)
 		if err != nil {
-			return err
+			log.Fatalln(err)
 		}
 	}
-	return nil
 }
 
 //插入类型表到es

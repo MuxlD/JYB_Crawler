@@ -2,6 +2,7 @@ package eduData
 
 import (
 	"JYB_Crawler/Basics"
+	"JYB_Crawler/elasticsearch"
 	"context"
 	"fmt"
 	"github.com/chromedp/chromedp"
@@ -9,7 +10,7 @@ import (
 	"regexp"
 )
 
-func CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
+func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
 
 	goCtx, cancel := chr.NewTab()
 	defer cancel()
@@ -19,17 +20,24 @@ func CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) {
 
 	//进入具体的信息爬取
 	var err error
-	bts, err = EveryEdu(goCtx, tsCraw.Url)
+	bts, err = ts.EveryEdu(goCtx, tsCraw.Url)
 	if err != nil {
 		log.Println("信息爬取失败，失败信息：", tsCraw.Url, err)
 	}
-	//bts.TypeId = tsCraw.TypeID
+	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
+
+	bts.TypeID = tsCraw.TypeID
+	bts.TypeUrl = Basics.EveryType[tsCraw.TypeID-1].TypeUrl
+	bts.TypeName = Basics.EveryType[tsCraw.TypeID-1].TypeName
 	bts.Url = tsCraw.Url
-	fmt.Println(bts)
+	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber,type_id,type_url,type_name,url
+	//fmt.Println(bts)
+
+	elasticsearch.Docsc <- bts
 
 }
 
-func EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err error) {
+func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err error) {
 
 	fmt.Println("entry:", url)
 	//start := time.Now()
@@ -40,7 +48,7 @@ func EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err e
 	)
 	if err != nil {
 		//页面加载不成功
-		log.Println( "页面加载不成功,页面模板可能存在差距，链接：", url,err)
+		log.Println("页面加载不成功,页面模板可能存在差距，链接：", url, err)
 		return
 	}
 
@@ -56,9 +64,9 @@ func EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err e
 
 	bts.Course = Splice(courseHtml, `title="(.*)">`)
 	bts.BrightSpot = Splice(bsHtml, `.png" alt="">(.*)</span>`)
-
+	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
 	//log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
-	log.Println("exit:",url)
+	log.Println("exit:", url)
 	return
 }
 
