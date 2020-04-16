@@ -106,4 +106,5 @@ func Mapping(index, mapping string) {
 	if err != nil {
 		log.Fatal(index, "CreateIndex error:", err)
 	}
+	log.Println(index, "mapping created successfully...")
 }

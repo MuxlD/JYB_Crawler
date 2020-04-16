@@ -40,7 +40,7 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 	done = make(chan struct{})
 
 	//生产者函数，对变量everyType的值进行处理,完善type对象空白字段
-	go ts.GetAllEdu()
+	go ts.AllLink()
 	//建立批量插入任务
 	indexCtx, indexCancel := context.WithCancel(context.Background())
 	//多消费者，es生产者
@@ -58,7 +58,8 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 
 //主要爬虫程序
 func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCancel context.CancelFunc) {
-	//初始化浏览器
+	log.Println("chrome ID", chromeId, ":Successfully entered goroutine...")
+	//新的浏览器
 	chrome := NewChromedp(context.Background())
 	var stop bool
 	var ok bool
@@ -76,6 +77,7 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 			chrome.Close()
 			return
 		case <-done:
+			log.Println("收到生产者结束信号...")
 			//生产者结束信号
 			stop = true
 		case tsCraw, ok = <-tsCh:
@@ -93,6 +95,7 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 				log.Println("CrawlerByUrl error, info:", err)
 				//出错时，关闭批量插入es的任务
 				indexCancel()
+				return
 			}
 			continue
 		}

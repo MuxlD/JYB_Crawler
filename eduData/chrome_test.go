@@ -23,7 +23,7 @@ func TestNewChromedp(t *testing.T) {
 		return
 	}
 	fmt.Println(false)
-	//函数输出为false
+	//函数输出为false,ctx1 != ctx2
 }
 
 func TestNewTab(t *testing.T) {
@@ -42,5 +42,5 @@ func TestNewTab(t *testing.T) {
 		return
 	}
 	fmt.Println(false)
-	//函数输出为false
+	//函数输出为false,ctx1 != ctx2
 }

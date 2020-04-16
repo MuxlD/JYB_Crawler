@@ -8,15 +8,16 @@ import (
 	"github.com/chromedp/chromedp"
 	"log"
 	"regexp"
+	"time"
 )
 
 func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
+	log.Println("当前学校链接：", tsCraw.Url)
 
 	goCtx, cancel := chr.NewTab()
 	defer cancel()
 
 	var bts Basics.TrainingSchool
-	log.Println("当前学校链接：", tsCraw.Url)
 
 	//进入具体的信息爬取
 	bts, err = ts.EveryEdu(goCtx, tsCraw.Url)
@@ -39,6 +40,8 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 
 func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err error) {
 
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(chromedpTimeout)*time.Second)
+	defer cancel()
 	fmt.Println("entry:", url)
 	//start := time.Now()
 	err = chromedp.Run(ctx,

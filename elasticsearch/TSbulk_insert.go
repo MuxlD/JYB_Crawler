@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"github.com/olivere/elastic/v7"
+	"log"
 	"strconv"
 	"sync/atomic"
 )
 
 //Consumer
 func BulkInsert(indexCtx context.Context) error {
+	log.Println("begin bulk insert...")
 	bulk := Client.Bulk().Index(Index).Type(Typ)
 	for d := range Docsc {
 		// Simple progress
@@ -31,6 +33,7 @@ func BulkInsert(indexCtx context.Context) error {
 				return errors.New("bulk commit failed")
 			}
 			// "bulk" is reset after Do, so you can reuse it
+			log.Println(Index, "intermediate item bulk inserted successfully...")
 		}
 
 		select {
@@ -46,12 +49,13 @@ func BulkInsert(indexCtx context.Context) error {
 			return err
 		}
 	}
+	log.Println(Index, "all inserted successfully...")
 	return nil
 }
 
 //插入类型表到es
 func TpBulkInsert() error {
-
+	log.Println("begin type bulk insert...")
 	bulk := Client.Bulk().Index("crawler_type").Type("type_info")
 
 	for _, d := range Basics.EveryType {
@@ -72,5 +76,6 @@ func TpBulkInsert() error {
 			// "bulk" is reset after Do, so you can reuse it
 		}
 	}
+	log.Println("crawler_type bulk inserted successfully...")
 	return nil
 }

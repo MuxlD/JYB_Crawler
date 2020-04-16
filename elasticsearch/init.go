@@ -34,7 +34,7 @@ func InitMapping() {
 	//解析os.Args[1:]中的命令行标志
 	flag.Parse()
 	//设置log.Println的打印格式(文件+行号)  example: elasticsearch/simple_demo/log/SetFlags.go
-	log.SetFlags(0)
+	log.SetFlags(log.Lshortfile)
 
 	if url == "" {
 		log.Fatal("missing url parameter")
@@ -57,5 +57,5 @@ func InitMapping() {
 
 	//创建索引结构
 	//Mapping(Index, TsMapping)
-	Mapping("crawler_type", TpMapping)
+	//Mapping("crawler_type", TpMapping)
 }

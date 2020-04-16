@@ -2,8 +2,8 @@ package eduData
 
 import (
 	"JYB_Crawler/Basics"
-	"JYB_Crawler/elasticsearch"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chromedp/chromedp"
 	"github.com/jinzhu/gorm"
@@ -15,8 +15,8 @@ import (
 var maxID uint
 
 //生产者函数
-func (ts *TsCrawler) GetAllEdu() {
-	db := Basics.GetDB()
+func (ts *TsCrawler) getAllEdu(db *gorm.DB) {
+	defer close(tsCh)
 	//清空数据
 	db.Exec("TRUNCATE TABLE ts_urls;")
 
@@ -24,11 +24,22 @@ func (ts *TsCrawler) GetAllEdu() {
 	defer chrome.Close()
 	//便利出所有的类型
 	for id, ets := range Basics.EveryType {
-		_ = db.Table("ts_urls").Select("max(id)").Row().Scan(&maxID)
+		//方便程序添加主键值
+		err := db.Table("ts_urls").Select("max(id)").Row().Scan(&maxID)
+		if err != nil {
+			log.Println(err)
+			//继续下一种类型
+			continue
+		}
 		start := time.Now()
 
 		//获取类型最大页码
-		maxPa := maxPage(chrome, ets)
+		maxPa, err := maxPage(chrome, ets)
+		if err != nil {
+			log.Println(err)
+			//继续下一种类型
+			continue
+		}
 		//update max_page from types where id = id+1
 		db.Model(&Basics.Type{}).Where("id = ?", id+1).Update("max_page", maxPa)
 		fmt.Println("最大页码为", maxPa)
@@ -46,16 +57,17 @@ func (ts *TsCrawler) GetAllEdu() {
 			//学校链接爬取,及通道的写入
 			var urlHtml string
 			nowPageUrl := ets.TypeUrl + "p" + strconv.Itoa(n) + ".html"
-			err := chromedp.Run(ctx0,
+			fmt.Println("当前链接：", nowPageUrl)
+			err = chromedp.Run(ctx0,
 				chromedp.Navigate(nowPageUrl),
 				chromedp.WaitVisible(`.mt10`),
 				chromedp.OuterHTML(`.mt10 .office-result-list`, &urlHtml),
 			)
 			if err != nil {
-				log.Println("html提取失败", err)
-				break
+				log.Println("getAllEdu html提取失败", err)
+				//继续下一页
+				continue
 			}
-			fmt.Println("当前链接：", nowPageUrl)
 			selectUrl(urlHtml, `href="(.*)" target="_blank" class="office-rlist-name"`, oneUrl, db, &count)
 		}
 		//update count from types where id = id+1
@@ -64,17 +76,6 @@ func (ts *TsCrawler) GetAllEdu() {
 		//该类型爬虫结束，取消任务
 		cancel()
 	}
-
-	//关闭通道，通知所有类目下的商品获取完成
-	close(done)
-	log.Println("所有学校url提取完成...")
-	//将完善过的type对象批量插入es
-	err := elasticsearch.TpBulkInsert()
-	if err != nil {
-		log.Println("TpBulkInsert error,info:", err)
-		return
-	}
-	log.Println("将完善过的type对象批量插入es")
 }
 
 //提取url
@@ -92,18 +93,19 @@ func selectUrl(html string, reg string, tst Basics.TsUrl, db *gorm.DB, count *in
 }
 
 //最大页码查询
-func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa int) {
+func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa int, err error) {
 	ctx, c := chrome.NewTab()
 	defer c()
 	ctx, _ = context.WithTimeout(ctx, time.Duration(chromedpTimeout)*time.Second)
-	err := chromedp.Run(ctx,
+	err = chromedp.Run(ctx,
 		//页面跳转
 		chromedp.Navigate(ets.TypeUrl),
 		// 存在类型组，说明成功进入
 		chromedp.WaitVisible(`.mt10`),
 	)
 	if err != nil {
-		log.Fatalln("类型首页加载失败...", ets.TypeUrl)
+		log.Println("类型首页加载失败...", ets.TypeUrl)
+		return
 	}
 	//页面验证，找出最大页码
 	var xPage string //最大页码
@@ -112,7 +114,8 @@ func maxPage(chrome *ChromeBrowser, ets Basics.Type) (maxPa int) {
 		chromedp.Text(`.mt10 .pagination li:nth-last-child(2) a`, &xPage),
 	)
 	if err != nil {
-		log.Println(err)
+		err = errors.New("max_page获取失败")
+		return
 	}
 	maxPa, _ = strconv.Atoi(xPage)
 	if maxPa == 0 {
