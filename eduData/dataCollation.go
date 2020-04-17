@@ -72,7 +72,7 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 			return
 		//indexCancel(),当es插入异常时关闭
 		case <-indexCtx.Done():
-			log.Printf("es bulk insert error...\n")
+			log.Printf("bulk insert or CrawlerByUrl error...\n")
 			//关闭浏览器
 			chrome.Close()
 			return
@@ -92,9 +92,9 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 			//消费函数
 			err := ts.CrawlerByUrl(tsCraw, chrome)
 			if err != nil {
-				log.Println("CrawlerByUrl error, info:", err)
+				log.Println("chromeID", chromeId, ":CrawlerByUrl error, info:", err)
 				//出错时，关闭批量插入es的任务
-				indexCancel()
+				//indexCancel()
 				return
 			}
 			continue

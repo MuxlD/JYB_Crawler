@@ -2,8 +2,8 @@ package eduData
 
 import (
 	"JYB_Crawler/Basics"
-	"JYB_Crawler/elasticsearch"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chromedp/chromedp"
 	"log"
@@ -18,58 +18,87 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 	defer cancel()
 
 	var bts Basics.TrainingSchool
+	var retry bool
 
 	//进入具体的信息爬取
-	bts, err = ts.EveryEdu(goCtx, tsCraw.Url)
-	if err != nil {
-		log.Println("信息爬取失败，失败信息：", tsCraw.Url, err)
+	for i := 0; i < 3; i++ {
+		bts, retry = ts.EveryEdu(goCtx, tsCraw.Url)
+		if !retry {
+			break
+		}
 	}
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
+	if bts.Name == "" {
+		log.Println("获取学校信息失败", tsCraw.Url)
+		err = errors.New("多次尝试无效")
+		return
+	}
 
 	bts.TypeID = tsCraw.TypeID
 	bts.TypeUrl = Basics.EveryType[tsCraw.TypeID-1].TypeUrl
 	bts.TypeName = Basics.EveryType[tsCraw.TypeID-1].TypeName
 	bts.Url = tsCraw.Url
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber,type_id,type_url,type_name,url
-	//fmt.Println(bts)
+	fmt.Println(bts)
 
-	elasticsearch.Docsc <- bts
+	//elasticsearch.Docsc <- bts
 
 	return
 }
 
-func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, err error) {
+func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, retry bool) {
+	// retry == false 时触发循环
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(chromedpTimeout)*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	fmt.Println("entry:", url)
-	//start := time.Now()
-	err = chromedp.Run(ctx,
+
+	start := time.Now()
+	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
-		//等待机构详细出现
-		chromedp.WaitVisible(`index-agency-intro-container`),
+		//等待链接页面
+		chromedp.WaitVisible(`.page-container`),
 	)
 	if err != nil {
 		//页面加载不成功
-		log.Println("页面加载不成功,页面模板可能存在差距，链接：", url, err)
+		log.Println("验证页面第一条class失败", err)
+		retry = true
+		return
+	}
+
+	err = chromedp.Run(ctx,
+		//验证是否存在机构详细
+		chromedp.WaitVisible(`.index-agency-intro-container`),
+	)
+	if err != nil {
+		retry = false
 		return
 	}
 
 	var courseHtml string
 	var bsHtml string
 	//写入基础信息
-
 	err = chromedp.Run(ctx, dpCrawl(&bts, &courseHtml, &bsHtml))
 	if err != nil {
-		log.Println("信息爬取失败.")
+		retry = true
 		return
 	}
 
-	bts.Course = Splice(courseHtml, `title="(.*)">`)
-	bts.BrightSpot = Splice(bsHtml, `.png" alt="">(.*)</span>`)
+	if courseHtml != "" {
+		bts.Course = Splice(courseHtml, `title="(.*)">`)
+	} else {
+
+	}
+
+	if bsHtml != "" {
+		bts.BrightSpot = Splice(bsHtml, `.png" alt="">(.*)</span>`)
+	} else {
+
+	}
+
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
-	//log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
-	log.Println("exit:", url)
+
+	log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
+
 	return
 }
 

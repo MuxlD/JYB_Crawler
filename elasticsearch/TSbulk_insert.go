@@ -18,12 +18,13 @@ func BulkInsert(indexCtx context.Context) error {
 		// Simple progress
 		// AddUint64(): total增加1，并返回一个新的值 类似于total++
 		atomic.AddUint64(&Total, 1)
-
+		d.ID = int(Total)
 		// Enqueue the document
 		bulk.Add(elastic.NewBulkIndexRequest().Id(strconv.Itoa(d.ID)).Doc(d))
 		//当bulk中的doc的数量达到bulkSize时，执行一次批量插入操作
 		if bulk.NumberOfActions() >= BulkSize {
 			// Commit
+			log.Println(Index, Total, "articles inserted successfully...")
 			res, err := bulk.Do(indexCtx)
 			if err != nil {
 				return err
