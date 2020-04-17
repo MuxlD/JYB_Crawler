@@ -14,16 +14,15 @@ import (
 func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
-	goCtx, cancel := chr.NewTab()
-	defer cancel()
+	start := time.Now()
 
 	var bts Basics.TrainingSchool
 	var retry bool
 
 	//进入具体的信息爬取
 	for i := 0; i < 3; i++ {
-		bts, retry = ts.EveryEdu(goCtx, tsCraw.Url)
-		if !retry {
+		bts, retry = ts.EveryEdu(chr, tsCraw.Url)
+		if !retry { //retry == false 时跳出循环
 			break
 		}
 	}
@@ -43,16 +42,18 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 
 	//elasticsearch.Docsc <- bts
 
+	log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
+
 	return
 }
 
-func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.TrainingSchool, retry bool) {
-	// retry == false 时触发循环
-
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.TrainingSchool, retry bool) {
+	// retry == true 时触发循环
+	goCtx, cancel := chr.NewTab()
+	defer cancel()
+	ctx, cancel := context.WithTimeout(goCtx, 15*time.Second)
 	defer cancel()
 
-	start := time.Now()
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
 		//等待链接页面
@@ -70,7 +71,8 @@ func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.Train
 		chromedp.WaitVisible(`.index-agency-intro-container`),
 	)
 	if err != nil {
-		retry = false
+		log.Println("等待机构详细显示失败", err)
+		retry = true
 		return
 	}
 
@@ -79,6 +81,7 @@ func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.Train
 	//写入基础信息
 	err = chromedp.Run(ctx, dpCrawl(&bts, &courseHtml, &bsHtml))
 	if err != nil {
+		log.Println("获取机构信息失败...")
 		retry = true
 		return
 	}
@@ -86,19 +89,16 @@ func (ts *TsCrawler) EveryEdu(ctx context.Context, url string) (bts Basics.Train
 	if courseHtml != "" {
 		bts.Course = Splice(courseHtml, `title="(.*)">`)
 	} else {
-
+		log.Println(bts.Name, "获取到的课程为空...")
 	}
 
 	if bsHtml != "" {
 		bts.BrightSpot = Splice(bsHtml, `.png" alt="">(.*)</span>`)
 	} else {
-
+		log.Println(bts.Name, "获取到的特色为空...")
 	}
 
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
-
-	log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
-
 	return
 }
 
