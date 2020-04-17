@@ -12,7 +12,8 @@ var (
 	chromedpTimeout int //爬取网络超时时间
 	done            chan struct{}
 	tsCh            chan Basics.TsUrl
-	tsCapacity      = 1000 //仓库容量
+	tsCapacity      = 1000   //仓库容量
+	PendLink        []string //正常爬取出错的待处理链接
 )
 
 type TsCrawler struct{}
@@ -77,7 +78,6 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 			chrome.Close()
 			return
 		case <-done:
-			log.Println("收到生产者结束信号...")
 			//生产者结束信号
 			stop = true
 		case tsCraw, ok = <-tsCh:
@@ -90,12 +90,9 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 				return
 			}
 			//消费函数
-			err := ts.CrawlerByUrl(tsCraw, chrome)
-			if err != nil {
-				log.Println("chromeID", chromeId, ":CrawlerByUrl error, info:", err)
-				//出错时，关闭批量插入es的任务
-				//indexCancel()
-				return
+			reUrl := ts.CrawlerByUrl(tsCraw, chrome)
+			if reUrl != "" {
+				PendLink = append(PendLink, reUrl)
 			}
 			continue
 		}

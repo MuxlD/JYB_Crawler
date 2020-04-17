@@ -32,10 +32,9 @@ func TestCrawlerByUrl(t *testing.T) {
 	ts := new(TsCrawler)
 	date = time.Now()
 	for _, ats := range dbAllTs {
-
-		err := ts.CrawlerByUrl(ats, chrome)
-		if err != nil {
-			log.Println(err)
+		reUrl := ts.CrawlerByUrl(ats, chrome)
+		if reUrl != " " {
+			log.Println(reUrl)
 			continue
 		}
 	}

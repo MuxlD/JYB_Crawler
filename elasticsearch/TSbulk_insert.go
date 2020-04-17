@@ -16,9 +16,8 @@ func BulkInsert(indexCtx context.Context) error {
 	bulk := Client.Bulk().Index(Index).Type(Typ)
 	for d := range Docsc {
 		// Simple progress
-		// AddUint64(): total增加1，并返回一个新的值 类似于total++
+		// AddUint64(): total增加1，并返回一个新的值 类似于total++，可避免多协程同时修改
 		atomic.AddUint64(&Total, 1)
-		d.ID = int(Total)
 		// Enqueue the document
 		bulk.Add(elastic.NewBulkIndexRequest().Id(strconv.Itoa(d.ID)).Doc(d))
 		//当bulk中的doc的数量达到bulkSize时，执行一次批量插入操作

@@ -2,6 +2,7 @@ package eduData
 
 import (
 	"JYB_Crawler/Basics"
+	"JYB_Crawler/elasticsearch"
 	"errors"
 	"github.com/jinzhu/gorm"
 	"log"
@@ -39,12 +40,12 @@ func (ts *TsCrawler) AllLink() {
 	}
 	//关闭通道，通知所有类目下的商品获取完成
 	close(done)
-	log.Println("所有学校url提取完成...")
+	log.Println("发送第一生产者结束信号,url获取结束...")
 	//将完善过的type对象批量插入es
-	/*err := elasticsearch.TpBulkInsert()
+	err := elasticsearch.TpBulkInsert()
 	if err != nil {
 		log.Println("TpBulkInsert error,info:", err)
 		return
-	}*/
+	}
 	log.Println("将完善过的type对象批量插入es")
 }

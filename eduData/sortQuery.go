@@ -2,16 +2,19 @@ package eduData
 
 import (
 	"JYB_Crawler/Basics"
+	"JYB_Crawler/elasticsearch"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/chromedp/chromedp"
 	"log"
 	"regexp"
+	"sync/atomic"
 	"time"
 )
 
-func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
+var TsID uint64
+
+func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (reUrl string) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
 	start := time.Now()
@@ -27,12 +30,12 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 		}
 	}
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
-	if bts.Name == "" {
-		log.Println("获取学校信息失败", tsCraw.Url)
-		err = errors.New("多次尝试无效")
-		return
+	if bts.PhoneNumber == "" {
+		log.Println("页面模板不一致", tsCraw.Url)
+		reUrl = tsCraw.Url
 	}
-
+	atomic.AddUint64(&TsID, 1)
+	bts.ID = int(TsID)
 	bts.TypeID = tsCraw.TypeID
 	bts.TypeUrl = Basics.EveryType[tsCraw.TypeID-1].TypeUrl
 	bts.TypeName = Basics.EveryType[tsCraw.TypeID-1].TypeName
@@ -40,7 +43,7 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber,type_id,type_url,type_name,url
 	fmt.Println(bts)
 
-	//elasticsearch.Docsc <- bts
+	elasticsearch.Docsc <- bts
 
 	log.Printf("抓取成功,爬取耗时：%v\n", time.Since(start))
 
@@ -51,28 +54,34 @@ func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.Traini
 	// retry == true 时触发循环
 	goCtx, cancel := chr.NewTab()
 	defer cancel()
-	ctx, cancel := context.WithTimeout(goCtx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(goCtx, 15*time.Second) //time.Duration(chromedpTimeout)
 	defer cancel()
 
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
+	)
+	if err != nil {
+		//页面加载不成功
+		log.Println("链接跳转失败或页面不存在", url, err)
+		return bts, true
+	}
+
+	err = chromedp.Run(ctx,
 		//等待链接页面
 		chromedp.WaitVisible(`.page-container`),
 	)
 	if err != nil {
 		//页面加载不成功
-		log.Println("验证页面第一条class失败", err)
-		retry = true
-		return
+		log.Println("验证页面第一条class失败", url, err)
+		return bts, true
 	}
 
 	err = chromedp.Run(ctx,
-		//验证是否存在机构详细
-		chromedp.WaitVisible(`.index-agency-intro-container`),
+		//验证机构名称
+		chromedp.JavascriptAttribute(`.header-agency-outer .header-agency-logo img`, "title", &bts.Name),
 	)
 	if err != nil {
-		log.Println("等待机构详细显示失败", err)
-		retry = true
+		log.Println("机构名称加载不成功", err)
 		return
 	}
 
@@ -82,12 +91,16 @@ func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.Traini
 	err = chromedp.Run(ctx, dpCrawl(&bts, &courseHtml, &bsHtml))
 	if err != nil {
 		log.Println("获取机构信息失败...")
-		retry = true
 		return
 	}
 
 	if courseHtml != "" {
+		//当课程大于1时
 		bts.Course = Splice(courseHtml, `title="(.*)">`)
+		if bts.Course == nil {
+			//当课程为1时
+			bts.Course = Splice(courseHtml, `target="_blank">(.*)</a>`)
+		}
 	} else {
 		log.Println(bts.Name, "获取到的课程为空...")
 	}
@@ -105,10 +118,8 @@ func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.Traini
 //直接爬取
 func dpCrawl(bts *Basics.TrainingSchool, courseHtml, bsHtml *string) chromedp.Tasks {
 	return chromedp.Tasks{
-		chromedp.JavascriptAttribute(`.header-agency-outer .header-agency-logo img`, "title", &bts.Name),
-
 		//chromedp.OuterHTML(`.header-agency-outer`, &ts.Course),
-		chromedp.OuterHTML(`.agency-nav .agency-nav-toggle-list`, courseHtml),
+		chromedp.OuterHTML(`.agency-nav .agency-nav-toggle`, courseHtml),
 		chromedp.OuterHTML(`.index-agency-intro-right`, bsHtml),
 
 		chromedp.Text(`.index-agency-intro-jj p`, &bts.Info),
