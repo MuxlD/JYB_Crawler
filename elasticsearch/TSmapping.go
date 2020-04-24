@@ -35,10 +35,16 @@ const (
           "type": "text"
         },
         "course": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
         },
         "campus": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
             "keyword": {
               "type": "keyword",
@@ -47,13 +53,13 @@ const (
           }
         },
         "phone_number": {
-          "type": "keyword"
+          "type": "text"
         }
       }
     }
   },
   "settings": {
-    "number_of_shards": 3,
+    "number_of_shards": 1,
     "number_of_replicas": 0
   }
 }`

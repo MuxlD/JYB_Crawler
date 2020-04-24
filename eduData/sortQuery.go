@@ -4,6 +4,7 @@ import (
 	"JYB_Crawler/Basics"
 	"JYB_Crawler/elasticsearch"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/chromedp/chromedp"
 	"log"
@@ -14,7 +15,7 @@ import (
 
 var TsID uint64
 
-func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (reUrl string) {
+func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
 	start := time.Now()
@@ -31,16 +32,20 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (reUr
 	}
 	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber
 	if bts.PhoneNumber == "" {
-		log.Println("页面模板不一致", tsCraw.Url)
-		reUrl = tsCraw.Url
+		log.Println("页面模板不一致,放入PendCh通道", tsCraw.Url)
+		err = errors.New("Continue to suspend link crawl ")
+		pendCh <- tsCraw
+		return
 	}
+
 	atomic.AddUint64(&TsID, 1)
+
 	bts.ID = int(TsID)
 	bts.TypeID = tsCraw.TypeID
 	bts.TypeUrl = Basics.EveryType[tsCraw.TypeID-1].TypeUrl
 	bts.TypeName = Basics.EveryType[tsCraw.TypeID-1].TypeName
 	bts.Url = tsCraw.Url
-	//成功赋值字段name,course,brightSpot,info,campus,phoneNumber,type_id,type_url,type_name,url
+
 	fmt.Println(bts)
 
 	elasticsearch.Docsc <- bts
@@ -54,7 +59,7 @@ func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.Traini
 	// retry == true 时触发循环
 	goCtx, cancel := chr.NewTab()
 	defer cancel()
-	ctx, cancel := context.WithTimeout(goCtx, 15*time.Second) //time.Duration(chromedpTimeout)
+	ctx, cancel := context.WithTimeout(goCtx, time.Duration(chromedpTimeout)*time.Second) //time.Duration(chromedpTimeout)
 	defer cancel()
 
 	err := chromedp.Run(ctx,

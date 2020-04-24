@@ -33,7 +33,7 @@ func TestCrawlerByUrl(t *testing.T) {
 	date = time.Now()
 	for _, ats := range dbAllTs {
 		reUrl := ts.CrawlerByUrl(ats, chrome)
-		if reUrl != " " {
+		if reUrl != nil {
 			log.Println(reUrl)
 			continue
 		}

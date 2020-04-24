@@ -1,6 +1,8 @@
 package Basics
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+)
 
 const (
 	JYBFL = "https://cs.jiaoyubao.cn/edu/"
@@ -18,6 +20,13 @@ func InitConf() {
 }
 
 var ConfSql MySql
+
+type Model struct {
+	ID        uint `gorm:"primary_key" json:"id"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `sql:"index"`
+}
 
 type MySql struct {
 	Name     string
@@ -42,7 +51,7 @@ type TrainingSchool struct {
 }
 
 type Type struct {
-	gorm.Model
+	Model
 	TypeName string `json:"type_name"`
 	TypeUrl  string `json:"type_url"`
 	MaxPage  int    `json:"max_page"`
@@ -52,7 +61,7 @@ type Type struct {
 var EveryType []Type
 
 type TsUrl struct {
-	gorm.Model
+	Model
 	TypeID uint   `json:"type_id"`
 	Url    string `json:"url"`
 }

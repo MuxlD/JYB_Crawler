@@ -6,14 +6,16 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 )
 
 var (
 	chromedpTimeout int //爬取网络超时时间
 	done            chan struct{}
 	tsCh            chan Basics.TsUrl
-	tsCapacity      = 1000   //仓库容量
-	PendLink        []string //正常爬取出错的待处理链接
+	tsCapacity      = 1000            //仓库容量
+	pendCh          chan Basics.TsUrl //正常爬取出错的待处理链接
+	pendCapacity    = 100
 )
 
 type TsCrawler struct{}
@@ -37,6 +39,8 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 	//记录初始ts
 	//设置仓库容量
 	tsCh = make(chan Basics.TsUrl, tsCapacity)
+	pendCh = make(chan Basics.TsUrl, pendCapacity)
+	defer close(pendCh)
 	//生产者信号通道
 	done = make(chan struct{})
 
@@ -46,8 +50,8 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 	indexCtx, indexCancel := context.WithCancel(context.Background())
 	//多消费者，es生产者
 	for i := 1; i <= goroutineNum; i++ {
-		go ts.Crawler(strconv.Itoa(i), indexCtx, indexCancel)
-		//time.Sleep(time.Second * 10)
+		go ts.Crawler(strconv.Itoa(i), indexCtx)
+		time.Sleep(time.Second * 3)
 	}
 	err := elasticsearch.BulkInsert(indexCtx)
 	if err != nil {
@@ -58,12 +62,12 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 }
 
 //主要爬虫程序
-func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCancel context.CancelFunc) {
+func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context) {
 	log.Println("chrome ID", chromeId, ":Successfully entered goroutine...")
 	//新的浏览器
 	chrome := NewChromedp(context.Background())
 	var stop bool
-	var ok bool
+	var ok, pend bool
 	var tsCraw Basics.TsUrl
 	for {
 		select {
@@ -81,7 +85,8 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 			//生产者结束信号
 			stop = true
 		case tsCraw, ok = <-tsCh:
-			if !ok && stop {
+			//tsCh通道和pendCh通道全部读出，done通道关闭
+			if !ok && stop && !pend {
 				log.Printf("通道内容已消费完," + chromeId + "号协程退出...\n")
 				//所有内容写入完成关闭es写入通道
 				close(elasticsearch.Docsc)
@@ -90,11 +95,16 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context, indexCan
 				return
 			}
 			//消费函数
-			reUrl := ts.CrawlerByUrl(tsCraw, chrome)
-			if reUrl != "" {
-				PendLink = append(PendLink, reUrl)
+			err := ts.CrawlerByUrl(tsCraw, chrome)
+			if err != nil {
+				log.Println(err)
 			}
-			continue
+		case tsCraw, pend = <-pendCh:
+			err := crawlerByPendUrl(tsCraw, chrome)
+			if err != nil {
+				log.Println(err)
+			}
+
 		}
 	}
 }
