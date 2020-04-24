@@ -1,5 +1,5 @@
 # JYB_Crawler
-## Basics
+### Basics
 + basicsData.go  
   > MySql: 配置数据库相关参数  
   > TrainingSchool: 培训机构对象  
@@ -7,7 +7,7 @@
   > TsUrl: 爬虫中间对象
 + initMysql.go
   > 连接数据库`MysqlInit`，创建数据库表格`CreateTable`及数据库连接接口`GetDB`  
-## eduDate
+### eduDate
 + allLink.go
   >`getAllEdu`获取机构的连接，通过`TsUrl`并放入通道。
 + allLink_db.go
@@ -28,12 +28,12 @@
   >机构信息页面模板`1`爬取程序
 + sortQuery_test.go
   >测试可用性
-## elasticsearch
+### elasticsearch
 + init.go
   > 创建`Client`、elasticsearch索引
 + TSbulk_insert.go
   > `BulkInsert`批量插入机构信息函数，`TpBulkInsert`批量插入类型信息。
 + TSmapping.go
   > 索引创建函数，`TsMapping`为培训机构索引信息,`TpMapping`为类型索引信息。
-## main
+### main
 main函数，开启爬虫
