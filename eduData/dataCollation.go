@@ -75,7 +75,7 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context) {
 		case <-chrome.allocCtx.Done():
 			log.Printf("收到退出信号，" + chromeId + "号协程执行退出...\n")
 			return
-		//indexCancel(),当es插入异常时关闭
+		//indexCancel(),当es插入异常时关闭,批量插入失败
 		case <-indexCtx.Done():
 			log.Printf("bulk insert or CrawlerByUrl error...\n")
 			//关闭浏览器
