@@ -28,7 +28,7 @@ func InitMapping() {
 	flag.StringVar(&Typ, "type", "training_school", "Elasticsearch type name")
 	flag.BoolVar(&sniff, "sniff", true, "Enable or disable sniffing")
 	//每50条批量插入一次
-	flag.IntVar(&BulkSize, "bulk-size", 50, "Number of documents to collect before committing")
+	flag.IntVar(&BulkSize, "size", 50, "Number of documents to collect before committing")
 
 	flag.PrintDefaults()
 	//解析os.Args[1:]中的命令行标志
