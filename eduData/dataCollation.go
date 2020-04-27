@@ -80,12 +80,6 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx, ctx context.Context) {
 	var tsCraw Basics.TsUrl
 	for {
 		select {
-		//当chrome.Close()(即:chrome.cancel())被执行时,程序才会进入该case//异常退出
-		case <-ts.ctx.Done():
-			log.Printf("收到退出信号，" + chromeId + "号协程执行退出...\n")
-			cancel()
-			chrome.Close()
-			return
 		//indexCancel(),当es插入异常时关闭,批量插入失败
 		case <-indexCtx.Done():
 			log.Printf("bulk insert or CrawlerByUrl error...\n")
