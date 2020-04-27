@@ -50,13 +50,19 @@ func InitMapping() {
 	}
 
 	Docsc = make(chan Basics.TrainingSchool, BulkSize)
+
 	// Create an Elasticsearch client
-	Client, err = elastic.NewClient(elastic.SetURL(url), elastic.SetSniff(sniff))
+	Client = NewClient(url, sniff)
+
+	//创建索引结构
+	//Mapping(Index, TsMapping)
+	//Mapping("crawler_type", TpMapping)
+}
+
+func NewClient(url string, sniff bool) *elastic.Client {
+	client, err := elastic.NewClient(elastic.SetURL(url), elastic.SetSniff(sniff))
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	//创建索引结构
-	Mapping(Index, TsMapping)
-	Mapping("crawler_type", TpMapping)
+	return client
 }

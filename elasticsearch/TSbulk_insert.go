@@ -10,20 +10,20 @@ import (
 	"sync/atomic"
 )
 
-//Consumer
+//Consumer 从通道获取数据
 func BulkInsert(indexCtx context.Context) error {
 	log.Println("begin bulk insert...")
 	bulk := Client.Bulk().Index(Index).Type(Typ)
+
 	for d := range Docsc {
-		// Simple progress
-		// AddUint64(): total增加1，并返回一个新的值 类似于total++，可避免多协程同时修改
+
 		atomic.AddUint64(&Total, 1)
-		// Enqueue the document
 		bulk.Add(elastic.NewBulkIndexRequest().Id(strconv.Itoa(d.ID)).Doc(d))
+
 		//当bulk中的doc的数量达到bulkSize时，执行一次批量插入操作
 		if bulk.NumberOfActions() >= BulkSize {
-			// Commit
 			log.Println(Index, Total, "articles inserted successfully...")
+
 			res, err := bulk.Do(indexCtx)
 			if err != nil {
 				return err
@@ -32,7 +32,7 @@ func BulkInsert(indexCtx context.Context) error {
 				// Look up the failed documents with res.Failed(), and e.g. recommit
 				return errors.New("bulk commit failed")
 			}
-			// "bulk" is reset after Do, so you can reuse it
+
 			log.Println(Index, "intermediate item bulk inserted successfully...")
 		}
 
@@ -53,7 +53,7 @@ func BulkInsert(indexCtx context.Context) error {
 	return nil
 }
 
-//插入类型表到es
+//插入类型表到es，从切片获取数据
 func TpBulkInsert() error {
 	log.Println("begin type bulk insert...")
 	bulk := Client.Bulk().Index("crawler_type").Type("type_info")

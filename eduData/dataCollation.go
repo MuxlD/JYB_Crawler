@@ -18,13 +18,20 @@ var (
 	pendCapacity    = 100
 )
 
-type TsCrawler struct{}
+type TsCrawler struct {
+	ctx context.Context
+}
 
-func StartContext(goroutineNum, cralerTimeout int) {
-	ts := new(TsCrawler)
+func NewTsCrawler(ctx context.Context) *TsCrawler {
+	return &TsCrawler{
+		ctx,
+	}
+}
+
+func StartContext(ctx context.Context, goroutineNum, cralerTimeout int) {
 	//构建类型切片，设置通用超时时间
 	chromedpTimeout = cralerTimeout
-
+	ts := NewTsCrawler(ctx)
 	//获取所有类型链接,为变量everyType赋值
 	err := ts.FindAllType(Basics.JYBFL)
 	if err != nil {
@@ -50,7 +57,7 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 	indexCtx, indexCancel := context.WithCancel(context.Background())
 	//多消费者，es生产者
 	for i := 1; i <= goroutineNum; i++ {
-		go ts.Crawler(strconv.Itoa(i), indexCtx)
+		go ts.Crawler(strconv.Itoa(i), indexCtx, ts.ctx)
 		time.Sleep(time.Second * 3)
 	}
 	err := elasticsearch.BulkInsert(indexCtx)
@@ -62,23 +69,28 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 }
 
 //主要爬虫程序
-func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context) {
+func (ts *TsCrawler) Crawler(chromeId string, indexCtx, ctx context.Context) {
 	log.Println("chrome ID", chromeId, ":Successfully entered goroutine...")
 	//新的浏览器
-	chrome := NewChromedp(context.Background())
+	chrome := NewChromedp(ctx)
+	contx, cancel := chrome.AssignBrowser(Basics.Allo)
+
 	var stop bool
 	var ok, pend bool
 	var tsCraw Basics.TsUrl
 	for {
 		select {
 		//当chrome.Close()(即:chrome.cancel())被执行时,程序才会进入该case//异常退出
-		case <-chrome.allocCtx.Done():
+		case <-ts.ctx.Done():
 			log.Printf("收到退出信号，" + chromeId + "号协程执行退出...\n")
+			cancel()
+			chrome.Close()
 			return
 		//indexCancel(),当es插入异常时关闭,批量插入失败
 		case <-indexCtx.Done():
 			log.Printf("bulk insert or CrawlerByUrl error...\n")
 			//关闭浏览器
+			cancel()
 			chrome.Close()
 			return
 		case <-done:
@@ -95,12 +107,15 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx context.Context) {
 				return
 			}
 			//消费函数
-			err := ts.CrawlerByUrl(tsCraw, chrome)
+			err := ts.CrawlerByUrl(tsCraw, contx)
 			if err != nil {
 				log.Println(err)
 			}
 		case tsCraw, pend = <-pendCh:
-			err := crawlerByPendUrl(tsCraw, chrome)
+			if !pend {
+				continue
+			}
+			err := crawlerByPendUrl(tsCraw, contx)
 			if err != nil {
 				log.Println(err)
 			}
