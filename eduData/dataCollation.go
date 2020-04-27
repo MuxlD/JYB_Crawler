@@ -47,7 +47,6 @@ func (ts *TsCrawler) Do(goroutineNum int) {
 	//设置仓库容量
 	tsCh = make(chan Basics.TsUrl, tsCapacity)
 	pendCh = make(chan Basics.TsUrl, pendCapacity)
-	defer close(pendCh)
 	//生产者信号通道
 	done = make(chan struct{})
 
@@ -93,7 +92,7 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx, ctx context.Context) {
 		case tsCraw, ok = <-tsCh:
 			//tsCh通道和pendCh通道全部读出，done通道关闭
 			if !ok && stop && !pend {
-				log.Printf("通道内容已消费完," + chromeId + "号协程退出...\n")
+				log.Printf("所有通道内容已消费完," + chromeId + "号协程退出...\n")
 				//所有内容写入完成关闭es写入通道
 				close(elasticsearch.Docsc)
 				//关闭浏览器
@@ -107,13 +106,13 @@ func (ts *TsCrawler) Crawler(chromeId string, indexCtx, ctx context.Context) {
 			}
 		case tsCraw, pend = <-pendCh:
 			if !pend {
+				log.Printf("pendCh通道内容已消费完")
 				continue
 			}
 			err := crawlerByPendUrl(tsCraw, contx)
 			if err != nil {
 				log.Println(err)
 			}
-
 		}
 	}
 }

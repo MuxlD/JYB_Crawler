@@ -8,22 +8,6 @@ import (
 	"log"
 )
 
-func getAllEduInDB(db *gorm.DB) error {
-	defer close(tsCh)
-	var dbAllTs []Basics.TsUrl
-	var total int
-	db = db.Model(Basics.TsUrl{}).Count(&total)
-	//验证数据库中是否有数据
-	if total <= 0 {
-		return errors.New("table ts_urls is empty")
-	}
-	db.Find(&dbAllTs)
-	for _, tst := range dbAllTs {
-		tsCh <- tst
-	}
-	return nil
-}
-
 func (ts *TsCrawler) AllLink() {
 	db := Basics.GetDB()
 	db.Model(Basics.Type{}).Find(&Basics.EveryType)
@@ -48,4 +32,19 @@ func (ts *TsCrawler) AllLink() {
 		return
 	}
 	log.Println("将完善过的type对象批量插入es")
+}
+
+func getAllEduInDB(db *gorm.DB) error {
+	var dbAllTs []Basics.TsUrl
+	var total int
+	db = db.Model(Basics.TsUrl{}).Count(&total)
+	//验证数据库中是否有数据
+	if total <= 0 {
+		return errors.New("table ts_urls is empty")
+	}
+	db.Find(&dbAllTs)
+	for _, tst := range dbAllTs {
+		tsCh <- tst
+	}
+	return nil
 }
