@@ -16,7 +16,6 @@ var maxID uint
 
 //生产者函数
 func (ts *TsCrawler) getAllEdu(db *gorm.DB) {
-	defer close(tsCh)
 	//清空数据
 	db.Exec("TRUNCATE TABLE ts_urls;")
 
