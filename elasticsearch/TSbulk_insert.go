@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"JYB_Crawler/Basics"
+	"JYB_Crawler.Vn/Basics"
 	"context"
 	"errors"
 	"github.com/olivere/elastic/v7"

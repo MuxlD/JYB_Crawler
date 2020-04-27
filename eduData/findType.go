@@ -1,7 +1,7 @@
 package eduData
 
 import (
-	"JYB_Crawler/Basics"
+	"JYB_Crawler.Vn/Basics"
 	"context"
 	"fmt"
 	"github.com/chromedp/chromedp"

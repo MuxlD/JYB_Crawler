@@ -1,8 +1,8 @@
 package eduData
 
 import (
-	"JYB_Crawler/Basics"
-	"JYB_Crawler/elasticsearch"
+	"JYB_Crawler.Vn/Basics"
+	"JYB_Crawler.Vn/elasticsearch"
 	"context"
 	"log"
 	"strconv"

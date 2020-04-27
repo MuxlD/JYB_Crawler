@@ -1,10 +1,10 @@
 package main
 
 import (
-	"JYB_Crawler/Basics"
-	"JYB_Crawler/eduData"
-	"JYB_Crawler/elasticsearch"
-	//_ "JYB_Crawler/elasticsearch"
+	"JYB_Crawler.Vn/Basics"
+	"JYB_Crawler.Vn/eduData"
+	"JYB_Crawler.Vn/elasticsearch"
+	//_ "JYB_Crawler.Vn/elasticsearch"
 )
 
 func main() {
