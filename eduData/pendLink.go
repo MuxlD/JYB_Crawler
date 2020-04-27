@@ -1,8 +1,8 @@
 package eduData
 
 import (
-	"JYB_Crawler/Basics"
-	"JYB_Crawler/elasticsearch"
+	"JYB_Crawler.Vn/Basics"
+	"JYB_Crawler.Vn/elasticsearch"
 	"context"
 	"errors"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func crawlerByPendUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
+func crawlerByPendUrl(tsCraw Basics.TsUrl, ctx context.Context) (err error) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
 	start := time.Now()
@@ -22,7 +22,7 @@ func crawlerByPendUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
 
 	//进入具体的信息爬取
 	for i := 0; i < 3; i++ {
-		bts, retry = everyPend(chr, tsCraw.Url)
+		bts, retry = everyPend(ctx, tsCraw.Url)
 		if !retry { //retry == false 时跳出循环
 			break
 		}
@@ -48,9 +48,8 @@ func crawlerByPendUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
 	return
 }
 
-func everyPend(chr *ChromeBrowser, url string) (bts Basics.TrainingSchool, retry bool) {
-	goCtx, cancel := chr.NewTab()
-	defer cancel()
+func everyPend(goCtx context.Context, url string) (bts Basics.TrainingSchool, retry bool) {
+
 	ctx, cancel := context.WithTimeout(goCtx, 15*time.Second) //time.Duration(chromedpTimeout)
 	defer cancel()
 

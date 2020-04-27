@@ -1,8 +1,8 @@
 package eduData
 
 import (
-	"JYB_Crawler/Basics"
-	"JYB_Crawler/elasticsearch"
+	"JYB_Crawler.Vn/Basics"
+	"JYB_Crawler.Vn/elasticsearch"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 
 var TsID uint64
 
-func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err error) {
+func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, ctx context.Context) (err error) {
 	log.Println("当前学校链接：", tsCraw.Url)
 
 	start := time.Now()
@@ -25,7 +25,7 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 
 	//进入具体的信息爬取
 	for i := 0; i < 3; i++ {
-		bts, retry = ts.EveryEdu(chr, tsCraw.Url)
+		bts, retry = ts.EveryEdu(ctx, tsCraw.Url)
 		if !retry { //retry == false 时跳出循环
 			break
 		}
@@ -55,10 +55,8 @@ func (ts *TsCrawler) CrawlerByUrl(tsCraw Basics.TsUrl, chr *ChromeBrowser) (err 
 	return
 }
 
-func (ts *TsCrawler) EveryEdu(chr *ChromeBrowser, url string) (bts Basics.TrainingSchool, retry bool) {
+func (ts *TsCrawler) EveryEdu(goCtx context.Context, url string) (bts Basics.TrainingSchool, retry bool) {
 	// retry == true 时触发循环
-	goCtx, cancel := chr.NewTab()
-	defer cancel()
 	ctx, cancel := context.WithTimeout(goCtx, time.Duration(chromedpTimeout)*time.Second) //time.Duration(chromedpTimeout)
 	defer cancel()
 

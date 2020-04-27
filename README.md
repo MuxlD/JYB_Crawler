@@ -1,4 +1,4 @@
-# JYB_Crawler
+# JYB_Crawler.Vn
 ### Basics
 + basicsData.go  
   > MySql: 配置数据库相关参数  

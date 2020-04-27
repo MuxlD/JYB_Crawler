@@ -8,6 +8,17 @@ import (
 
 var MysqlDB *gorm.DB
 
+func StartMySql() {
+	InitConf()
+	MysqlInit(
+		ConfSql.Name,
+		ConfSql.Password,
+		ConfSql.Host,
+		ConfSql.Port,
+		ConfSql.Database,
+	)
+	CreateTable()
+}
 
 func MysqlInit(name, passwd, host, port, datebase string) {
 	fmt.Println("Init mysql...")
@@ -30,21 +41,9 @@ func GetDB() *gorm.DB {
 	return MysqlDB
 }
 
-func CreateTable(){
+func CreateTable() {
 	GetDB().AutoMigrate(
 		Type{},
 		TsUrl{},
 	)
-}
-
-func StartMySql() {
-	InitConf()
-	MysqlInit(
-		ConfSql.Name,
-		ConfSql.Password,
-		ConfSql.Host,
-		ConfSql.Port,
-		ConfSql.Database,
-	)
-	CreateTable()
 }

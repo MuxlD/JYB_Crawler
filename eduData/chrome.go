@@ -25,6 +25,19 @@ func (chrome *ChromeBrowser) Close() {
 	chrome.cancel()
 }
 
+//第一次在context调用Run()时，浏览器将通过分配器被/分配。
+//因此，在第一个Ctx调用上使用Run()超时通常是有弊端的，因为它将停止整个浏览器。
+//需要在设置timeout之前需要先分配浏览器
+//allocator可设置为任意可正常跳转的链接
+func (chrome *ChromeBrowser) AssignBrowser(allocator string) (context.Context, context.CancelFunc) {
+	ctx, cancel := chrome.NewTab()
+	err := chromedp.Run(ctx, chromedp.Navigate(allocator))
+	if err != nil {
+		panic(err)
+	}
+	return ctx, cancel
+}
+
 //OpenBrowser 打开浏览器
 func OpenBrowser(ctx context.Context, opts *Opts) *ChromeBrowser {
 
@@ -70,5 +83,5 @@ func NewChromedp(ctx context.Context) *ChromeBrowser {
 		`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36`,
 		"",
 	}
-	return OpenBrowser(ctx,opts)
+	return OpenBrowser(ctx, opts)
 }
